@@ -1,0 +1,26 @@
+{
+  "name": "spaceport",
+  "version": "0.0.1",
+  "description": "Threadpooling for React.js providers / React-Redux",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/secberus-oss/Spaceport.git"
+  },
+  "keywords": [
+    "thread",
+    "worker",
+    "thread-pool",
+    "redux",
+    "multithreading"
+  ],
+  "author": "Secberus",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/secberus-oss/Spaceport/issues"
+  },
+  "homepage": "https://github.com/secberus-oss/Spaceport#readme"
+}
