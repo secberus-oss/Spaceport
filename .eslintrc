@@ -1,5 +1,8 @@
 {
     "extends": [
+        "plugin:import/errors",
+        "plugin:import/warnings",
+        "plugin:import/typescript",
         "eslint:recommended",
         "plugin:@typescript-eslint/eslint-recommended",
         "plugin:@typescript-eslint/recommended",
@@ -7,6 +10,10 @@
         "prettier/@typescript-eslint"
     ],
     "globals": {
+        "it": false,
+        "test": false,
+        "expect": false,
+        "assert": false
     },
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
@@ -17,5 +24,24 @@
     "plugins": [
         "@typescript-eslint"
     ],
-    "rules": {}
+    "rules": {
+        "array-callback-return": "warn",
+        "import/no-cycle": "warn",
+        "no-use-before-define": "warn",
+        "no-underscore-dangle": "warn",
+        "consistent-return": "warn",
+        "no-param-reassign": "warn",
+        "no-nested-ternary": "warn",
+        "no-restricted-globals": "warn",
+        "prettier/prettier": "error",
+        "import/extensions": [
+            "error",
+            "ignorePackages",
+            {
+                "js": "never",
+                "ts": "never",
+                "tsx": "never"
+            }
+        ]
+    }
 }
