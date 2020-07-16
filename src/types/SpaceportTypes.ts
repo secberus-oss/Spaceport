@@ -3,6 +3,18 @@ interface SpaceportConfig {
   pool?: number;
 }
 
+enum PrebuildOptions {
+  none = 'NONE',
+  http = 'HTTP',
+  filtering = 'FILTERING',
+  sorting = 'SORTING',
+}
+
+interface PrebuildConfig {
+  usePrebuilt?: boolean;
+  prebuiltOption?: PrebuildOptions;
+}
+
 interface WorkerLifecycle {
   workerDidSpawn?: (hook: () => void) => void;
   workerReceivedMessage?: (hook: () => void) => void;
@@ -29,10 +41,34 @@ interface Spaceport {
   workerLocations: Array<WorkerLocations>;
 }
 
+interface WorkerMethodsAndProperties {
+  onmessage: () => void;
+  onmessageerror: () => void;
+  rejectionhandled: () => void;
+  messageerror: () => void;
+  unhandledrejection: () => void;
+  message: () => void;
+}
+
+interface WorkerBuilder {
+  prebuildOptions?: PrebuildConfig;
+  lifecycleHooks: WorkerLifecycle;
+  methods: WorkerMethodsAndProperties;
+}
+
+interface BuiltWorker {
+  hooks: WorkerLifecycle;
+  content: WorkerMethodsAndProperties;
+}
+
 export {
   SpaceportConfig,
   Spaceport,
   WorkerConfig,
   WorkerLocations,
   WorkerLifecycle,
+  WorkerMethodsAndProperties,
+  BuiltWorker,
+  WorkerBuilder,
+  PrebuildOptions,
 };

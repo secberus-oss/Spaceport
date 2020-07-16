@@ -1,0 +1,4 @@
+module.exports = {
+  usePrebuilts: true,
+  workerSources: ['src/abc/def'],
+};

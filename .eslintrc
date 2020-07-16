@@ -13,7 +13,9 @@
         "it": false,
         "test": false,
         "expect": false,
-        "assert": false
+        "assert": false,
+        "process": false,
+        "Worker": false,
     },
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
