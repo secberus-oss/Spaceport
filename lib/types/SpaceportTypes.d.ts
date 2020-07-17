@@ -42,6 +42,12 @@ interface WorkerMethodsAndProperties {
     unhandledrejection: () => void;
     message: () => void;
 }
+interface rcConfig {
+    modules?: boolean;
+    outputPath?: string;
+    retainParentFolderStructure?: boolean;
+    inputPath?: Array<string> | string;
+}
 interface WorkerBuilder {
     prebuildOptions?: PrebuildConfig;
     lifecycleHooks: WorkerLifecycle;
@@ -51,4 +57,4 @@ interface BuiltWorker {
     hooks: WorkerLifecycle;
     content: WorkerMethodsAndProperties;
 }
-export { SpaceportConfig, Spaceport, WorkerConfig, WorkerLocations, WorkerLifecycle, WorkerMethodsAndProperties, BuiltWorker, WorkerBuilder, PrebuildOptions, };
+export { SpaceportConfig, Spaceport, WorkerConfig, WorkerLocations, WorkerLifecycle, WorkerMethodsAndProperties, BuiltWorker, WorkerBuilder, PrebuildOptions, rcConfig, };

@@ -50,6 +50,13 @@ interface WorkerMethodsAndProperties {
   message: () => void;
 }
 
+interface rcConfig {
+  modules?: boolean;
+  outputPath?: string;
+  retainParentFolderStructure?: boolean;
+  inputPath?: Array<string> | string;
+}
+
 interface WorkerBuilder {
   prebuildOptions?: PrebuildConfig;
   lifecycleHooks: WorkerLifecycle;
@@ -71,4 +78,5 @@ export {
   BuiltWorker,
   WorkerBuilder,
   PrebuildOptions,
+  rcConfig,
 };

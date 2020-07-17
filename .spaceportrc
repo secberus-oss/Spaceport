@@ -1,4 +1,8 @@
-module.exports = {
-  usePrebuilts: true,
-  workerSources: ['src/abc/def'],
-};
+{
+  "modules": true,
+  "outputPath": "./public/workers",
+  "retainParentFolderStructure": true,
+  "inputPath": [
+    "/src/workers"
+  ]
+}
