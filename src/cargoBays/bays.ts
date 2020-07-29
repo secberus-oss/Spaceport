@@ -154,7 +154,15 @@ class Bays {
       throw new TypeError('workerContent is not an array or single item.');
     }
     this.config.workerContent.forEach((worker: WorkerConfig) => {
-      this.workerStorage[worker.label].workerArray.push(new Worker(worker.url));
+      for (
+        let i = 0;
+        i <= Math.ceil((worker.poolingPriority || 0.25) * THREAD_COUNT);
+        i++
+      ) {
+        this.workerStorage[worker.label].workerArray.push(
+          new Worker(worker.url)
+        );
+      }
     });
   }
 
