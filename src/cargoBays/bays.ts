@@ -4,6 +4,8 @@ import debounce from 'lodash/debounce';
 import { WorkerConfig } from '../types/SpaceportTypes';
 import { Cancelable } from 'lodash';
 
+const SUPPORT_WORKERS = !!window.Worker || !!Worker;
+
 const THREAD_COUNT = navigator.hardwareConcurrency || 4;
 
 type Callback = ({
@@ -12,8 +14,15 @@ type Callback = ({
   ...rest
 }: Record<string, unknown>) => unknown;
 
-type WorkerType = ReturnType<() => typeof Worker>;
 type DebounceType = ReturnType<typeof debounce>;
+
+interface WorkerStorage {
+  workerArray: Array<Worker | never>;
+  url: string;
+  poolingPriority?: number;
+  terminate?: boolean;
+  terminationRuns?: boolean | number;
+}
 
 interface BayConfig {
   workerContent: WorkerConfig | Array<WorkerConfig>;
@@ -38,7 +47,7 @@ class Bays {
   public debounceFunction: DebounceType | number | null | Cancelable;
   public promiseStorage: Record<string, PromiseStorage> | null;
   public aggregateStorage: Record<string, unknown>;
-  public workerStorage: Record<string, Array<WorkerType>>;
+  public workerStorage: Record<string, WorkerStorage>;
 
   constructor({
     onmessageCallback,
@@ -52,6 +61,9 @@ class Bays {
     aggregatorTimeout = 0,
     aggregativeCallback = null,
   }: BayConfig) {
+    if (!SUPPORT_WORKERS) {
+      throw new Error('Workers are not supported. Exiting creation');
+    }
     this.aggregateStorage = {};
     this.promiseStorage = {};
     this.debounceFunction = null;
@@ -74,7 +86,13 @@ class Bays {
       throw new TypeError('workerContent is not an array or single item.');
     }
     this.config.workerContent.forEach((worker: WorkerConfig) => {
-      this.workerStorage[worker.label] = [];
+      this.workerStorage[worker.label] = {
+        workerArray: [],
+        url: worker.url,
+        poolingPriority: worker.poolingPriority || 0.25,
+        terminate: worker.terminate || false,
+        terminationRuns: worker.terminationRuns || 1,
+      };
     });
     if (this.config.useAggregator) {
       if (this.config.aggregativeCallback !== null) {
@@ -93,6 +111,7 @@ class Bays {
     if (this.config.promisify) {
       this.__promisify();
     }
+    this.__buildWorkers();
   }
 
   /**
@@ -125,7 +144,18 @@ class Bays {
     }
   }
   private __buildWorkers() {
-    //
+    if (!SUPPORT_WORKERS) {
+      console.warn(
+        'Workers not supported. Not generating workers. Recommend fallback.'
+      );
+      return false;
+    }
+    if (!Array.isArray(this.config.workerContent)) {
+      throw new TypeError('workerContent is not an array or single item.');
+    }
+    this.config.workerContent.forEach((worker: WorkerConfig) => {
+      this.workerStorage[worker.label].workerArray.push(new Worker(worker.url));
+    });
   }
 
   private __aggregator() {
