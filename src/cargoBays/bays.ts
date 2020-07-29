@@ -2,6 +2,7 @@
 
 import debounce from 'lodash/debounce';
 import { WorkerConfig } from '../types/SpaceportTypes';
+import { Cancelable } from 'lodash';
 
 const THREAD_COUNT = navigator.hardwareConcurrency || 4;
 
@@ -12,6 +13,7 @@ type Callback = ({
 }: Record<string, unknown>) => unknown;
 
 type WorkerType = ReturnType<() => typeof Worker>;
+type DebounceType = ReturnType<typeof debounce>;
 
 interface BayConfig {
   workerContent: WorkerConfig | Array<WorkerConfig>;
@@ -33,7 +35,7 @@ interface PromiseStorage {
 
 class Bays {
   public config: BayConfig;
-  public debounceFunction: ReturnType<typeof debounce> | number | null;
+  public debounceFunction: DebounceType | number | null | Cancelable;
   public promiseStorage: Record<string, PromiseStorage> | null;
   public aggregateStorage: Record<string, unknown>;
   public workerStorage: Record<string, Array<WorkerType>>;
@@ -100,10 +102,28 @@ class Bays {
   terminationRuns?: boolean;
   url: string;
    */
-  addData(): void {
+  public addData(): void {
     typeof this.debounceFunction === 'function' && this.debounceFunction();
   }
 
+  public cancelDebounce(): boolean {
+    try {
+      if (
+        typeof this.debounceFunction !== 'number' &&
+        this.debounceFunction !== null
+      ) {
+        this.debounceFunction.cancel();
+      } else {
+        throw new TypeError(
+          'Typeof debounce function is not a debounce function'
+        );
+      }
+      return true;
+    } catch (e) {
+      console.error(e || "Debounce not cancelled. Maybe it doesn't exist?");
+      return false;
+    }
+  }
   private __buildWorkers() {
     //
   }
