@@ -1,6 +1,6 @@
 # Spaceport
 
-Componentized, Centralized, and grouped worker threads for NodeJS, the Browser
+Componentized, Centralized, and grouped worker threads for NodeJS, the Browser, and any Worker supporting machines.
 
 ## Description
 
