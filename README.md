@@ -89,9 +89,10 @@ const currentData = React.useMemo(() =>  MyCargoBay.aggregatedData()}, [MyCargoB
 * git
 * Node
 
-1. Clone this repository
+1. Fork and clone this repository
 2. Make sure all tests pass with `npm run test`
 3. Make changes
+4. Create a pull request with accurate labels, issue numbers, and information for the reviewer.
 
 
 ## Authors
