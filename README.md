@@ -1,4 +1,4 @@
-# Spaceport
+# SpaceportJS
 
 Componentized, Centralized, and grouped worker threads for NodeJS, the Browser, and any Worker supporting machines.
 
@@ -24,7 +24,7 @@ To get spaceport into your project, execute the following:
 ### Basic CargoBay
 
 ```
-import spaceport, {cargoBay} from 'spaceport'
+import spaceport, {cargoBay} from 'spaceportjs'
 
 const MyCargoBay = new cargoBay({
  // TOO: Add config 

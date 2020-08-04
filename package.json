@@ -1,8 +1,8 @@
 {
-  "name": "spaceport",
-  "version": "0.0.1",
-  "description": "Threadpooling for React.js providers / React-Redux",
-  "main": "index.js",
+  "name": "spaceportjs",
+  "version": "0.0.2",
+  "description": "Componentized threadpooling to execute groups of actions.",
+  "main": "lib/index.js",
   "scripts": {
     "clean": "rimraf build && rimraf lib",
     "type-check": "tsc --noEmit",
