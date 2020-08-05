@@ -4,7 +4,8 @@ import debounce from 'lodash/debounce';
 import { WorkerConfig } from '../types/SpaceportTypes';
 import { Cancelable } from 'lodash';
 
-const SUPPORT_WORKERS = !!window.Worker || !!Worker;
+const SUPPORT_WORKERS =
+  typeof window !== 'undefined' ? !!window.Worker : !!Worker;
 
 const THREAD_COUNT = navigator.hardwareConcurrency || 4;
 
@@ -16,7 +17,7 @@ type Callback = ({
 
 type DebounceType = ReturnType<typeof debounce>;
 
-interface WorkerStorage {
+export interface WorkerStorage {
   workerArray: Array<Worker | never>;
   url: string;
   poolingPriority?: number;
@@ -24,7 +25,7 @@ interface WorkerStorage {
   terminationRuns?: boolean | number;
 }
 
-interface BayConfig {
+export interface BayConfig {
   workerContent: WorkerConfig | Array<WorkerConfig>;
   name: string;
   headers?: Record<string, unknown>;
@@ -33,11 +34,11 @@ interface BayConfig {
   timeout?: number;
   aggregatorTimeout?: number;
   postmessagePayload?: Record<string, unknown>;
+  aggregativeCallback?: Callback | null;
   onmessageCallback: Callback | null;
-  aggregativeCallback: Callback | null;
 }
 
-interface PromiseStorage {
+export interface PromiseStorage {
   identifier: string;
   resolvePromise: () => void;
 }
