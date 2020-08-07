@@ -1,5 +1,4 @@
 /* eslint-disable no-underscore-dangle */
-
 import debounce from 'lodash/debounce';
 import { WorkerConfig } from '../types/SpaceportTypes';
 import { Cancelable } from 'lodash';

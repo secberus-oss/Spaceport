@@ -1,5 +1,4 @@
 import CargoBay from '../bays';
-import 'jsdom-worker';
 
 describe('Cargobays', () => {
   it('should construct a cargobay without failing', () => {
@@ -9,7 +8,7 @@ describe('Cargobays', () => {
         {
           poolingPriority: 0.3,
           terminate: false,
-          url: '/fixture.js',
+          url: 'http://localhost:3000/fixture.js',
           label: 'Test Worker 1',
         },
       ],
