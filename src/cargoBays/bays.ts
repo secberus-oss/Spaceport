@@ -143,6 +143,7 @@ class Bays {
       return false;
     }
   }
+
   private __buildWorkers() {
     if (!SUPPORT_WORKERS) {
       console.warn(

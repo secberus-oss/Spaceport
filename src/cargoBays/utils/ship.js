@@ -1,1 +1,0 @@
-import openCargoBays from '../../bays';

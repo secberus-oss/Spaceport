@@ -13,7 +13,8 @@
         "it": false,
         "test": false,
         "expect": false,
-        "assert": false
+        "assert": false,
+        "promise": false
     },
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
