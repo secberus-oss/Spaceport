@@ -16,7 +16,10 @@ describe('Cargobays', () => {
         console.log(datum);
       },
     });
-
     expect(bay).toBeInstanceOf(CargoBay);
+    expect(bay.config).toBeTruthy();
+    expect(bay.debounceFunction).toStrictEqual(null);
+    expect(bay.promiseStorage).toStrictEqual({});
+    expect(bay.aggregateStorage).toStrictEqual({});
   });
 });
