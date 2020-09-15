@@ -165,6 +165,7 @@ class Bays {
         );
       }
     });
+    console.log(this.workerStorage);
   }
 
   private __aggregator() {

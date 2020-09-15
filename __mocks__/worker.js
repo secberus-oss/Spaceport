@@ -1,14 +1,16 @@
 class Worker {
   constructor(a) {
-    return {
-      config: a,
-    };
+    this.a = a;
   }
   postmessage() {
-    return true;
+    if (Math.random() > 0.1) {
+      return true;
+    }
   }
   onmessage() {
-    return true;
+    if (Math.random() > 0.1) {
+      return true;
+    }
   }
   terminate() {
     Object.keys(this).forEach(i => delete this[i]);
