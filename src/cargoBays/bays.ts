@@ -2,6 +2,7 @@
 import debounce from 'lodash/debounce';
 import { WorkerConfig } from '../types/SpaceportTypes';
 import { Cancelable } from 'lodash';
+import { v4 } from 'uuid';
 
 const SUPPORT_WORKERS =
   typeof window !== 'undefined' ? !!window.Worker : !!Worker;
@@ -45,7 +46,7 @@ export interface PromiseStorage {
 class Bays {
   public config: BayConfig;
   public debounceFunction: DebounceType | number | null | Cancelable;
-  public promiseStorage: Record<string, PromiseStorage> | null;
+  public promiseStorage: Record<string, PromiseStorage>[] | null;
   public aggregateStorage: Record<string, unknown>;
   public workerStorage: Record<string, WorkerStorage>;
 
@@ -65,7 +66,7 @@ class Bays {
       throw new Error('Workers are not supported. Exiting creation');
     }
     this.aggregateStorage = {};
-    this.promiseStorage = {};
+    this.promiseStorage = [];
     this.debounceFunction = null;
     this.workerStorage = {};
     this.config = {
@@ -165,7 +166,34 @@ class Bays {
         );
       }
     });
-    console.log(this.workerStorage);
+  }
+
+  private shipBay(identifier: string, payload: Record<string, unknown>[]) {
+    const constructedPayload = Array.isArray(payload) ? payload : [payload];
+
+    try {
+      if (payload.length === 0) {
+        throw new Error('Cannot ship a cargobay with no payload.');
+      }
+      const bay = this.workerStorage[identifier];
+      if (bay.workerArray.length > 0) {
+        payload.forEach((payloadItem: Record<string, any>, index: number) => {
+          const callbackKey = v4();
+          const currentIndex =
+            index > bay.workerArray.length
+              ? index
+              : index % bay.workerArray.length;
+          const currentWorker: Worker = bay.workerArray[currentIndex];
+          this.__promisify(callbackKey);
+          payloadItem.spaceportInternals = {
+            current: index,
+            promiseKey: callbackKey,
+          };
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   private __aggregator() {
@@ -176,8 +204,14 @@ class Bays {
     //
   }
 
-  private __promisify() {
-    //
+  private __promisify(callbackkey: string) {
+    if (!this.promiseStorage) {
+      this.promiseStorage = [];
+    }
+    this.promiseStorage.push({
+      identifier: callbackkey,
+      resolvePromise: () => Promise.resolve(),
+    });
   }
 
   private __resolvePromisify() {
