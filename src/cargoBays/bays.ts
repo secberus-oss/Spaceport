@@ -40,13 +40,13 @@ export interface BayConfig {
 
 export interface PromiseStorage {
   identifier: string;
-  resolvePromise: () => void;
+  resolvePromise: (didResolveInTime: boolean) => Promise<boolean>;
 }
 
 class Bays {
   public config: BayConfig;
   public debounceFunction: DebounceType | number | null | Cancelable;
-  public promiseStorage: Record<string, PromiseStorage>[] | null;
+  public promiseStorage: PromiseStorage[] | null;
   public aggregateStorage: Record<string, unknown>;
   public workerStorage: Record<string, WorkerStorage>;
 
@@ -109,9 +109,6 @@ class Bays {
         );
       }
     }
-    if (this.config.promisify) {
-      this.__promisify();
-    }
     this.__buildWorkers();
   }
 
@@ -168,28 +165,31 @@ class Bays {
     });
   }
 
-  private shipBay(identifier: string, payload: Record<string, unknown>[]) {
+  shipBay(identifier: string, payload: Record<string, unknown>[]): void {
     const constructedPayload = Array.isArray(payload) ? payload : [payload];
-
     try {
       if (payload.length === 0) {
         throw new Error('Cannot ship a cargobay with no payload.');
       }
       const bay = this.workerStorage[identifier];
       if (bay.workerArray.length > 0) {
-        payload.forEach((payloadItem: Record<string, any>, index: number) => {
-          const callbackKey = v4();
-          const currentIndex =
-            index > bay.workerArray.length
-              ? index
-              : index % bay.workerArray.length;
-          const currentWorker: Worker = bay.workerArray[currentIndex];
-          this.__promisify(callbackKey);
-          payloadItem.spaceportInternals = {
-            current: index,
-            promiseKey: callbackKey,
-          };
-        });
+        constructedPayload.forEach(
+          (payloadItem: Record<string, any>, index: number) => {
+            const callbackKey = v4();
+            const currentIndex =
+              index > bay.workerArray.length
+                ? index
+                : index % bay.workerArray.length;
+            const currentWorker: Worker = bay.workerArray[currentIndex];
+            this.__promisify(callbackKey);
+            payloadItem.spaceportInternals = {
+              current: index,
+              promiseKey: callbackKey,
+            };
+            // @ts-disable
+            currentWorker.postmessage(payloadItem);
+          }
+        );
       }
     } catch (error) {
       console.error(error);
@@ -210,7 +210,8 @@ class Bays {
     }
     this.promiseStorage.push({
       identifier: callbackkey,
-      resolvePromise: () => Promise.resolve(),
+      resolvePromise: (didResolveInTime: boolean) =>
+        Promise.resolve(didResolveInTime),
     });
   }
 

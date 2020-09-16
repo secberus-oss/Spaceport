@@ -7,7 +7,7 @@ class Worker {
       return true;
     }
   }
-  onmessage() {
+  onmessage(callback) {
     if (Math.random() > 0.1) {
       return true;
     }

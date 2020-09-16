@@ -36,7 +36,21 @@ describe('Cargobays', () => {
     expect(bay).toBeInstanceOf(CargoBay);
     expect(bay.config).toBeTruthy();
     expect(bay.debounceFunction).toStrictEqual(null);
-    expect(bay.promiseStorage).toStrictEqual({});
+    expect(bay.promiseStorage).toStrictEqual([]);
     expect(bay.aggregateStorage).toStrictEqual({});
+  });
+  it('should ship cargobays', () => {
+    bay.shipBay('Test Worker 1', [
+      {
+        somePayload: true,
+      },
+      {
+        somePayload: true,
+      },
+      {
+        somePayload: true,
+      },
+    ]);
+    expect(bay.promiseStorage?.length).toBeGreaterThan(0);
   });
 });
