@@ -4,6 +4,13 @@ import { WorkerConfig } from '../types/SpaceportTypes';
 import { Cancelable } from 'lodash';
 import { v4 } from 'uuid';
 
+const blob = new Blob([
+  "onmessage = function(e) { postMessage('msg from worker'); }",
+]);
+
+// Obtain a blob URL reference to our worker 'file'.
+const blobURL = window.URL.createObjectURL(blob);
+
 const SUPPORT_WORKERS =
   typeof window !== 'undefined' ? !!window.Worker : !!Worker;
 
@@ -15,6 +22,8 @@ type Callback = ({
   ...rest
 }: Record<string, unknown>) => unknown;
 
+type WorkerCallback = ((this: Worker, ev: MessageEvent<any>) => any) | null;
+
 type DebounceType = ReturnType<typeof debounce>;
 
 export interface WorkerStorage {
@@ -23,6 +32,9 @@ export interface WorkerStorage {
   poolingPriority?: number;
   terminate?: boolean;
   terminationRuns?: boolean | number;
+  onmessageCallback?: Callback | null;
+  postmessagePayload?: Record<string, unknown>;
+  aggregativeCallback?: Callback | null;
 }
 
 export interface BayConfig {
@@ -35,7 +47,7 @@ export interface BayConfig {
   aggregatorTimeout?: number;
   postmessagePayload?: Record<string, unknown>;
   aggregativeCallback?: Callback | null;
-  onmessageCallback: Callback | null;
+  onmessageCallback: Callback;
 }
 
 export interface PromiseStorage {
@@ -165,8 +177,12 @@ class Bays {
     });
   }
 
-  shipBay(identifier: string, payload: Record<string, unknown>[]): void {
+  async shipBay(
+    identifier: string,
+    payload: Record<string, unknown>[]
+  ): Promise<() => PromiseSettledResult<unknown>> {
     const constructedPayload = Array.isArray(payload) ? payload : [payload];
+    let promises: string[];
     try {
       if (payload.length === 0) {
         throw new Error('Cannot ship a cargobay with no payload.');
@@ -176,24 +192,42 @@ class Bays {
         constructedPayload.forEach(
           (payloadItem: Record<string, any>, index: number) => {
             const callbackKey = v4();
+            promises.push(callbackKey);
             const currentIndex =
               index > bay.workerArray.length
                 ? index
                 : index % bay.workerArray.length;
             const currentWorker: Worker = bay.workerArray[currentIndex];
-            this.__promisify(callbackKey);
+            this.__promisify(callbackKey, identifier, currentIndex);
             payloadItem.spaceportInternals = {
               current: index,
               promiseKey: callbackKey,
             };
-            // @ts-disable
-            currentWorker.postmessage(payloadItem);
+            // eslint-disable-next-line
+            this.workerStorage[identifier].workerArray[
+              currentIndex
+            ].onmessage = data =>
+              this.workerStorage[identifier].onmessageCallback;
+            currentWorker.postMessage(payloadItem);
           }
         );
       }
     } catch (error) {
       console.error(error);
     }
+    const allNewPromises =
+      this.promiseStorage?.filter(({ resolvePromise, identifier }) => {
+        if (promises.indexOf(identifier) >= 0) {
+          return resolvePromise;
+        }
+      }) || [];
+    if (this.config.promisify && allNewPromises.length <= 0) {
+      throw new Error(
+        "You have enabled 'promisify' in your spaceport bay config, however you have not returned any new promises. Check your spaceport to make sure workers are actually initialized and sending requests."
+      );
+    }
+
+    return async () => Promise.allSettled(allNewPromises);
   }
 
   private __aggregator() {
@@ -204,10 +238,45 @@ class Bays {
     //
   }
 
-  private __promisify(callbackkey: string) {
+  private __promisify(
+    callbackkey: string,
+    identifier: string,
+    currentIndex: number
+  ): void {
     if (!this.promiseStorage) {
       this.promiseStorage = [];
     }
+
+    if (
+      typeof this.workerStorage[identifier].workerArray[currentIndex]
+        .onmessage === 'function'
+    ) {
+      this.workerStorage[identifier].workerArray[currentIndex].onmessage = (
+        data: unknown,
+        executable = this.workerStorage[identifier].onmessageCallback
+      ) =>
+        Promise.resolve((...workerResponseAndHanging: unknown[]) => {
+          console.log('Resolving promise');
+          if (this.promiseStorage !== null) {
+            this.promiseStorage.find(
+              ({ identifier, resolvePromise }) =>
+                identifier === callbackkey && resolvePromise(true)
+            );
+            console.log(workerResponseAndHanging);
+            console.log(identifier);
+          }
+          return workerResponseAndHanging;
+        }).then(executeData => {
+          console.log(executeData);
+          typeof executable === 'function'
+            ? executable({
+                spaceportInternals: executeData,
+                workerResponse: data,
+              })
+            : null;
+        });
+    }
+
     this.promiseStorage.push({
       identifier: callbackkey,
       resolvePromise: (didResolveInTime: boolean) =>

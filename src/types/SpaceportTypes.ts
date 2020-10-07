@@ -37,7 +37,7 @@ interface Spaceport {
 }
 
 interface WorkerMethodsAndProperties {
-  onmessage: () => void;
+  onmessage: () => unknown;
   onmessageerror: () => void;
   rejectionhandled: () => void;
   messageerror: () => void;
