@@ -1,7 +1,10 @@
+import { Console } from 'console';
 import CargoBay from '../bays';
 const code = `onmessage = e => {
-  console.log(e);
-  postMessage(e.data);
+  setTimeout(() => {
+    console.log(e);
+    postMessage(e.data);
+  }, 5000)
 }`;
 const workerURL = URL.createObjectURL(new Blob([code]));
 
@@ -49,18 +52,25 @@ describe('Cargobays', () => {
     expect(bay.promiseStorage).toStrictEqual([]);
     expect(bay.aggregateStorage).toStrictEqual({});
   });
-  it('should ship cargobays', () => {
-    bay.shipBay('Test Worker 1', [
-      {
-        somePayload: true,
-      },
-      {
-        somePayload: true,
-      },
-      {
-        somePayload: true,
-      },
-    ]);
+  it('should ship cargobays', async () => {
+    const startTime = Date.now();
+    console.log('Shipping');
+    bay
+      .shipBay('Test Worker 1', [
+        {
+          somePayload: true,
+        },
+        {
+          somePayload: true,
+        },
+        {
+          somePayload: true,
+        },
+      ])
+      .then(res => {
+        console.log("Promises complete");
+        console.log(res);
+      });
     expect(bay.promiseStorage?.length).toBeGreaterThan(0);
   });
 });
