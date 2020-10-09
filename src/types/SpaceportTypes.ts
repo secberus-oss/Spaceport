@@ -75,6 +75,47 @@ interface SpaceportConfig {
   useAggregator?: AggregatorConfig;
 }
 
+type Callback = ({
+  data,
+  postmessagePayload,
+  ...rest
+}: Record<string, unknown>) => unknown;
+
+type WorkerCallback = ((this: Worker, ev: MessageEvent<any>) => any) | null;
+
+type DebounceType = ReturnType<typeof debounce>;
+
+export interface WorkerStorage {
+  workerArray: Array<Worker | never>;
+  url: string;
+  poolingPriority?: number;
+  terminate?: boolean;
+  terminationRuns?: boolean | number;
+  onmessageCallback?: Callback | null;
+  postmessagePayload?: Record<string, unknown>;
+  aggregativeCallback?: Callback | null;
+}
+
+export interface BayConfig {
+  workerContent: WorkerConfig | Array<WorkerConfig>;
+  name: string;
+  headers?: Record<string, unknown>;
+  useAggregator?: boolean;
+  promisify?: boolean;
+  timeout?: number;
+  aggregatorTimeout?: number;
+  postmessagePayload?: Record<string, unknown>;
+  aggregativeCallback?: Callback | null;
+  onmessageCallback: Callback;
+}
+export interface PromiseStorageAttr {
+  promise: Promise<boolean> | null;
+  resolvePromise: ((didResolveInTime: boolean) => void) | null;
+}
+export interface PromiseStorage {
+  [key: string]: PromiseStorageAttr;
+}
+
 export {
   SpaceportConfig,
   Spaceport,
@@ -86,4 +127,7 @@ export {
   WorkerBuilder,
   PrebuildOptions,
   rcConfig,
+  WorkerCallback,
+  Callback,
+  DebounceType,
 };

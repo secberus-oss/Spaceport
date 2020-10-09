@@ -1,54 +1,20 @@
 /* eslint-disable no-underscore-dangle */
 import debounce from 'lodash/debounce';
-import { WorkerConfig } from '../types/SpaceportTypes';
-import { Cancelable, reject } from 'lodash';
+import {
+  WorkerConfig,
+  BayConfig,
+  DebounceType,
+  PromiseStorage,
+  WorkerStorage,
+  PromiseStorageAttr,
+} from '../types/SpaceportTypes';
+import { Cancelable } from 'lodash';
 import { v4 } from 'uuid';
 
 const SUPPORT_WORKERS =
   typeof window !== 'undefined' ? !!window.Worker : !!Worker;
 
 const THREAD_COUNT = navigator.hardwareConcurrency || 4;
-
-type Callback = ({
-  data,
-  postmessagePayload,
-  ...rest
-}: Record<string, unknown>) => unknown;
-
-type WorkerCallback = ((this: Worker, ev: MessageEvent<any>) => any) | null;
-
-type DebounceType = ReturnType<typeof debounce>;
-
-export interface WorkerStorage {
-  workerArray: Array<Worker | never>;
-  url: string;
-  poolingPriority?: number;
-  terminate?: boolean;
-  terminationRuns?: boolean | number;
-  onmessageCallback?: Callback | null;
-  postmessagePayload?: Record<string, unknown>;
-  aggregativeCallback?: Callback | null;
-}
-
-export interface BayConfig {
-  workerContent: WorkerConfig | Array<WorkerConfig>;
-  name: string;
-  headers?: Record<string, unknown>;
-  useAggregator?: boolean;
-  promisify?: boolean;
-  timeout?: number;
-  aggregatorTimeout?: number;
-  postmessagePayload?: Record<string, unknown>;
-  aggregativeCallback?: Callback | null;
-  onmessageCallback: Callback;
-}
-interface PromiseStorageAttr {
-  promise: Promise<boolean> | null;
-  resolvePromise: ((didResolveInTime: boolean) => void) | null;
-}
-export interface PromiseStorage {
-  [key: string]: PromiseStorageAttr;
-}
 
 class Bays {
   public config: BayConfig;
