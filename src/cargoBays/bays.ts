@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import debounce from 'lodash/debounce';
 import { WorkerConfig } from '../types/SpaceportTypes';
-import { Cancelable } from 'lodash';
+import { Cancelable, reject } from 'lodash';
 import { v4 } from 'uuid';
 
 const SUPPORT_WORKERS =
@@ -42,16 +42,18 @@ export interface BayConfig {
   aggregativeCallback?: Callback | null;
   onmessageCallback: Callback;
 }
-
+interface PromiseStorageAttr {
+  promise: Promise<boolean> | null;
+  resolvePromise: ((didResolveInTime: boolean) => void) | null;
+}
 export interface PromiseStorage {
-  identifier: string;
-  resolvePromise: (didResolveInTime: boolean) => Promise<boolean>;
+  [key: string]: PromiseStorageAttr;
 }
 
 class Bays {
   public config: BayConfig;
   public debounceFunction: DebounceType | number | null | Cancelable;
-  public promiseStorage: PromiseStorage[] | null;
+  public promiseStorage: PromiseStorage | null;
   public aggregateStorage: Record<string, unknown>;
   public workerStorage: Record<string, WorkerStorage>;
 
@@ -71,7 +73,7 @@ class Bays {
       throw new Error('Workers are not supported. Exiting creation');
     }
     this.aggregateStorage = {};
-    this.promiseStorage = [];
+    this.promiseStorage = {};
     this.debounceFunction = null;
     this.workerStorage = {};
     this.config = {
@@ -173,11 +175,7 @@ class Bays {
   async shipBay(
     identifier: string,
     payload: Record<string, unknown>[]
-  ): Promise<
-    PromiseSettledResult<
-      ((didResolveInTime: boolean) => Promise<boolean>) | undefined
-    >[]
-  > {
+  ): Promise<PromiseSettledResult<Promise<boolean> | undefined | null>[]> {
     const constructedPayload = Array.isArray(payload) ? payload : [payload];
     const promises: string[] = [];
     try {
@@ -186,7 +184,6 @@ class Bays {
       }
       const bay = this.workerStorage[identifier];
       if (bay.workerArray.length > 0) {
-        console.log('Bay workerArray > 0 ');
         constructedPayload.forEach(
           (payloadItem: Record<string, any>, index: number) => {
             const callbackKey = v4();
@@ -196,13 +193,11 @@ class Bays {
                 ? index
                 : index % bay.workerArray.length;
             const currentWorker: Worker = bay.workerArray[currentIndex];
-            console.log('Promisifying executed');
             this.__promisify(callbackKey, identifier, currentIndex);
             payloadItem.spaceportInternals = {
               current: index,
               promiseKey: callbackKey,
             };
-            console.log('Messaging worker');
             currentWorker.postMessage(payloadItem);
           }
         );
@@ -210,13 +205,17 @@ class Bays {
     } catch (error) {
       console.error(error);
     }
-
     return Promise.allSettled(
-      this.promiseStorage?.map(({ resolvePromise, identifier }) => {
-        if (promises.indexOf(identifier) >= 0) {
-          return resolvePromise;
-        }
-      }) || []
+      this.promiseStorage !== null
+        ? Object.entries(this.promiseStorage).map(([key, value]) => {
+            if (
+              promises.indexOf(key) >= 0 &&
+              value.promise instanceof Promise
+            ) {
+              return value.promise;
+            }
+          })
+        : []
     );
   }
 
@@ -228,47 +227,52 @@ class Bays {
     //
   }
 
+  // Promise.resolve(() => resolve existing worker promise).then((unknown) => unknown)
+
   private __promisify(
     callbackkey: string,
     identifier: string,
     currentIndex: number
   ): void {
-    if (!this.promiseStorage) {
-      this.promiseStorage = [];
+    const workerCallback = this.workerStorage[identifier].onmessageCallback;
+    if (workerCallback !== null && typeof workerCallback !== 'undefined') {
+      this.workerStorage[identifier].workerArray[currentIndex].onmessage = (
+        ...data
+      ) => workerCallback({ data });
     }
+    if (!this.promiseStorage) {
+      this.promiseStorage = {};
+    }
+
+    if (!(callbackkey in this.promiseStorage)) {
+      const promiseStorage: PromiseStorageAttr = {
+        resolvePromise: null,
+        promise: null,
+      };
+      promiseStorage.promise = new Promise(resolve => {
+        promiseStorage.resolvePromise = (resolvedInTime: boolean) => {
+          resolve(resolvedInTime);
+        };
+      });
+      this.promiseStorage[callbackkey] = promiseStorage;
+    }
+
     this.workerStorage[identifier].workerArray[currentIndex].onmessage = (
       data: unknown,
       executable = this.workerStorage[identifier].onmessageCallback
-    ) =>
-      Promise.resolve((...workerResponseAndHanging: unknown[]) => {
-        console.log('onmessagecallback was executed');
-        if (this.promiseStorage !== null) {
-          this.promiseStorage.find(
-            ({ identifier, resolvePromise }) =>
-              identifier === callbackkey && resolvePromise(true)
-          );
-          console.log(workerResponseAndHanging);
-          console.log(identifier);
-        }
-        return workerResponseAndHanging;
-      }).then(executeData => {
-        console.log(executeData);
-        typeof executable === 'function'
-          ? executable({
-              spaceportInternals: executeData,
-              workerResponse: data,
-            })
-          : null;
-      });
-    this.promiseStorage.push({
-      identifier: callbackkey,
-      resolvePromise: (didResolveInTime: boolean) =>
-        Promise.resolve(didResolveInTime),
-    });
-  }
-
-  private __resolvePromisify() {
-    //
+    ) => {
+      const promiseData = this.promiseStorage?.[callbackkey];
+      try {
+        promiseData?.resolvePromise && promiseData?.resolvePromise(true);
+      } catch (err) {
+        console.error(`An error occured trying to resolve ${callbackkey}`);
+      }
+      typeof executable === 'function'
+        ? executable({
+            workerResponse: data,
+          })
+        : null;
+    };
   }
 }
 

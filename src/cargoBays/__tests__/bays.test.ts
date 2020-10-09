@@ -1,10 +1,13 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import { Console } from 'console';
 import CargoBay from '../bays';
 const code = `onmessage = e => {
   setTimeout(() => {
-    console.log(e);
-    postMessage(e.data);
-  }, 5000)
+    postMessage(JSON.stringify(e));
+  }, 1000)
 }`;
 const workerURL = URL.createObjectURL(new Blob([code]));
 
@@ -49,28 +52,25 @@ describe('Cargobays', () => {
     expect(bay).toBeInstanceOf(CargoBay);
     expect(bay.config).toBeTruthy();
     expect(bay.debounceFunction).toStrictEqual(null);
-    expect(bay.promiseStorage).toStrictEqual([]);
+    expect(bay.promiseStorage).toStrictEqual({});
     expect(bay.aggregateStorage).toStrictEqual({});
   });
   it('should ship cargobays', async () => {
     const startTime = Date.now();
     console.log('Shipping');
-    bay
-      .shipBay('Test Worker 1', [
-        {
-          somePayload: true,
-        },
-        {
-          somePayload: true,
-        },
-        {
-          somePayload: true,
-        },
-      ])
-      .then(res => {
-        console.log("Promises complete");
-        console.log(res);
-      });
-    expect(bay.promiseStorage?.length).toBeGreaterThan(0);
+    const response = await bay.shipBay('Test Worker 1', [
+      {
+        somePayload: true,
+      },
+      {
+        somePayload: true,
+      },
+      {
+        somePayload: true,
+      },
+    ]);
+    console.log(response);
+    console.log(`Took ${Date.now() - startTime}ms`);
+    expect(bay.promiseStorage).not.toEqual({});
   });
 });

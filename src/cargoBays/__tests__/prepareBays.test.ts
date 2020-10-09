@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import CargoBay from '../bays';
 
 const code = `onmessage = e => postMessage(e.data)`;
