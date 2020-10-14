@@ -7,7 +7,7 @@ import CargoBay from '../bays';
 const code = `onmessage = e => {
   setTimeout(() => {
     postMessage(JSON.stringify(e));
-  }, 1000)
+  }, 2000)
 }`;
 const workerURL = URL.createObjectURL(new Blob([code]));
 
@@ -69,6 +69,18 @@ describe('Cargobays', () => {
         somePayload: true,
       },
     ]);
+    console.log(response);
+    console.log(`Took ${Date.now() - startTime}ms`);
+    expect(bay.promiseStorage).not.toEqual({});
+  });
+  it('Should be able to ship multiple messages to the same worker', async () => {
+    const startTime = Date.now();
+    const response = await bay.shipBay(
+      'Test Worker 1',
+      Array(30)
+        .fill(0)
+        .map((dud: any, index: number) => ({ somePayload: index }))
+    );
     console.log(response);
     console.log(`Took ${Date.now() - startTime}ms`);
     expect(bay.promiseStorage).not.toEqual({});

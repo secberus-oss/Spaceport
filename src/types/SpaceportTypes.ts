@@ -1,3 +1,4 @@
+import debounce from 'lodash/debounce';
 enum PrebuildOptions {
   none = 'NONE',
   http = 'HTTP',
@@ -114,6 +115,16 @@ export interface PromiseStorageAttr {
 }
 export interface PromiseStorage {
   [key: string]: PromiseStorageAttr;
+}
+
+export interface SpaceportInternals {
+  current: number;
+  promiseKey: string;
+  [key: string]: unknown; //extensible
+}
+
+export interface WithSpaceportInternals {
+  spaceportInternals: SpaceportInternals;
 }
 
 export {
