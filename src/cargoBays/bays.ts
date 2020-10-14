@@ -158,16 +158,14 @@ class Bays {
       if (bay.workerArray.length > 0) {
         constructedPayload.forEach(
           (payloadItem: Record<string, any>, index: number) => {
-            console.log(bay.workerArray);
             const callbackKey = v4();
             promises.push(callbackKey);
             const currentIndex =
               index < bay.workerArray.length
                 ? index
                 : index % bay.workerArray.length;
-            console.log(currentIndex);
             const currentWorker: Worker = bay.workerArray[currentIndex];
-            this.__promisify(callbackKey, identifier, currentIndex);
+            this.__promisify(callbackKey);
             payloadItem.spaceportInternals = {
               current: index,
               promiseKey: callbackKey,
@@ -219,7 +217,10 @@ class Bays {
     this.workerStorage[identifier].workerArray[workerIndex].onmessage = (
       messageResponse: MessageEvent<any>
     ): any => {
-      const executable = this.workerStorage[identifier].onmessageCallback;
+      console.log(this.workerStorage[identifier]);
+      const executable =
+        this.workerStorage[identifier].onmessageCallback ||
+        this.config.onmessageCallback;
       const data: string = messageResponse.data;
       const parseData: Record<
         'data',
@@ -245,31 +246,17 @@ class Bays {
       const { promiseKey } = spaceportInternals;
       const promiseData = this.promiseStorage?.[promiseKey];
       try {
-        console.log('resolving promise - ' + promiseKey);
         promiseData?.resolvePromise && promiseData?.resolvePromise(true);
       } catch (err) {
         console.error(`An error occured trying to resolve ${promiseKey}`);
       }
-      typeof executable === 'function'
-        ? executable({
-            workerResponse: data,
-          })
-        : null;
+      console.log('Executable: ', executable);
+      typeof executable === 'function' ? executable(messageResponse) : null;
     };
     return true;
   }
 
-  private __promisify(
-    callbackkey: string,
-    identifier: string,
-    currentIndex: number
-  ): void {
-    const workerCallback = this.workerStorage[identifier].onmessageCallback;
-    if (workerCallback !== null && typeof workerCallback !== 'undefined') {
-      this.workerStorage[identifier].workerArray[currentIndex].onmessage = (
-        ...data
-      ) => workerCallback({ data });
-    }
+  private __promisify(callbackkey: string): void {
     if (!this.promiseStorage) {
       this.promiseStorage = {};
     }

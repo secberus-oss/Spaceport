@@ -6,6 +6,8 @@ enum PrebuildOptions {
   sorting = 'SORTING',
 }
 
+type WorkerCallback = (arg0: MessageEvent<any>, ...rest: any[]) => any;
+
 interface PrebuildConfig {
   usePrebuilt?: boolean;
   prebuiltOption?: PrebuildOptions;
@@ -25,6 +27,7 @@ interface WorkerConfig {
   terminate?: boolean;
   terminationRuns?: boolean;
   url: string;
+  onmessageCallback?: WorkerCallback | null;
 }
 
 interface WorkerLocations {
@@ -82,8 +85,6 @@ type Callback = ({
   ...rest
 }: Record<string, unknown>) => unknown;
 
-type WorkerCallback = ((this: Worker, ev: MessageEvent<any>) => any) | null;
-
 type DebounceType = ReturnType<typeof debounce>;
 
 export interface WorkerStorage {
@@ -92,9 +93,9 @@ export interface WorkerStorage {
   poolingPriority?: number;
   terminate?: boolean;
   terminationRuns?: boolean | number;
-  onmessageCallback?: Callback | null;
+  onmessageCallback?: WorkerCallback | null;
   postmessagePayload?: Record<string, unknown>;
-  aggregativeCallback?: Callback | null;
+  aggregativeCallback?: WorkerCallback | null;
 }
 
 export interface BayConfig {
@@ -107,7 +108,7 @@ export interface BayConfig {
   aggregatorTimeout?: number;
   postmessagePayload?: Record<string, unknown>;
   aggregativeCallback?: Callback | null;
-  onmessageCallback: Callback;
+  onmessageCallback: WorkerCallback;
 }
 export interface PromiseStorageAttr {
   promise: Promise<boolean> | null;

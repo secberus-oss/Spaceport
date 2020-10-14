@@ -1,8 +1,6 @@
 /**
  * @jest-environment jsdom
  */
-
-import { Console } from 'console';
 import CargoBay from '../bays';
 const code = `onmessage = e => {
   setTimeout(() => {
@@ -23,6 +21,7 @@ let bay = new CargoBay({
     },
   ],
   onmessageCallback: (datum, a = 2, b = 3, c = 4) => {
+    console.log('Callback was executed');
     console.log(datum);
     console.log(a);
     console.log(b);
@@ -41,9 +40,13 @@ describe('Cargobays', () => {
           terminate: false,
           url: workerURL,
           label: 'Test Worker 1',
+          onmessageCallback: () => {
+            console.log('Job executed');
+          },
         },
       ],
       onmessageCallback: datum => {
+        console.log('Callback was executed');
         console.log(datum);
       },
     });
