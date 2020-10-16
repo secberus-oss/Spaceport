@@ -9,47 +9,66 @@ const code = `onmessage = e => {
 }`;
 const workerURL = URL.createObjectURL(new Blob([code]));
 
+const buildPayloads = (
+  payloadCount: number
+): Record<'somePayload', number>[] => {
+  return Array(payloadCount)
+    .fill(0)
+    .map((dud: number, index: number) => ({ somePayload: index }));
+};
+
+const fixtures = [
+  {
+    name: 'TEST_KEY',
+    promisify: false,
+    workerContent: [
+      {
+        poolingPriority: 0.3,
+        terminate: true,
+        url: workerURL,
+        label: 'TEST_KEY',
+      },
+    ],
+    onmessageCallback: (datum: MessageEvent<any>) => {
+      return datum;
+    },
+  },
+  {
+    name: 'TEST_KEY',
+    promisify: true,
+    workerContent: [
+      {
+        poolingPriority: 0.3,
+        terminate: true,
+        url: workerURL,
+        label: 'TEST_KEY',
+      },
+    ],
+    onmessageCallback: (data: MessageEvent<any>, ...rest: any[]) => {
+      return [data, rest];
+    },
+  },
+];
+
 let bay = new CargoBay({
-  name: 'Testing Cargo Bay',
+  name: 'TEST_KEY',
   promisify: true,
   workerContent: [
     {
       poolingPriority: 0.3,
       terminate: false,
       url: workerURL,
-      label: 'Test Worker 1',
+      label: 'TEST_KEY',
     },
   ],
-  onmessageCallback: (datum, a = 2, b = 3, c = 4) => {
-    console.log('Callback was executed');
-    console.log(datum);
-    console.log(a);
-    console.log(b);
-    console.log(c);
+  onmessageCallback: datum => {
+    return datum;
   },
 });
 
 describe('Cargobays', () => {
   beforeEach(() => {
-    bay = new CargoBay({
-      name: 'Testing Cargo Bay',
-      promisify: true,
-      workerContent: [
-        {
-          poolingPriority: 0.3,
-          terminate: false,
-          url: workerURL,
-          label: 'Test Worker 1',
-          onmessageCallback: () => {
-            console.log('Job executed');
-          },
-        },
-      ],
-      onmessageCallback: datum => {
-        console.log('Callback was executed');
-        console.log(datum);
-      },
-    });
+    bay = new CargoBay(fixtures[0]);
   });
   it('should construct a cargobay without failing', () => {
     expect(bay).toBeInstanceOf(CargoBay);
@@ -58,34 +77,15 @@ describe('Cargobays', () => {
     expect(bay.promiseStorage).toStrictEqual({});
     expect(bay.aggregateStorage).toStrictEqual({});
   });
-  it('should ship cargobays', async () => {
-    const startTime = Date.now();
-    console.log('Shipping');
-    const response = await bay.shipBay('Test Worker 1', [
-      {
-        somePayload: true,
-      },
-      {
-        somePayload: true,
-      },
-      {
-        somePayload: true,
-      },
-    ]);
-    console.log(response);
-    console.log(`Took ${Date.now() - startTime}ms`);
-    expect(bay.promiseStorage).not.toEqual({});
+
+  it('Should be able to ship multiple messages to the same worker without crashing', () => {
+    bay.shipBay('TEST_KEY', buildPayloads(10));
   });
-  it('Should be able to ship multiple messages to the same worker', async () => {
-    const startTime = Date.now();
-    const response = await bay.shipBay(
-      'Test Worker 1',
-      Array(30)
-        .fill(0)
-        .map((dud: any, index: number) => ({ somePayload: index }))
-    );
-    console.log(response);
-    console.log(`Took ${Date.now() - startTime}ms`);
-    expect(bay.promiseStorage).not.toEqual({});
+
+  it('Should be able to await the worker asyncronously', async () => {
+    bay = new CargoBay(fixtures[1]);
+    const response = await bay.shipBay('TEST_KEY', buildPayloads(30));
+    expect(response).not.toEqual(undefined);
+    expect(response).not.toEqual(null);
   });
 });

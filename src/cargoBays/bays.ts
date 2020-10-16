@@ -195,10 +195,6 @@ class Bays {
     //
   }
 
-  private __builder() {
-    //
-  }
-
   private __setOnmessageEventListener(
     workerIndex: number,
     identifier: string
@@ -217,7 +213,6 @@ class Bays {
     this.workerStorage[identifier].workerArray[workerIndex].onmessage = (
       messageResponse: MessageEvent<any>
     ): any => {
-      console.log(this.workerStorage[identifier]);
       const executable =
         this.workerStorage[identifier].onmessageCallback ||
         this.config.onmessageCallback;
@@ -250,7 +245,6 @@ class Bays {
       } catch (err) {
         console.error(`An error occured trying to resolve ${promiseKey}`);
       }
-      console.log('Executable: ', executable);
       typeof executable === 'function' ? executable(messageResponse) : null;
     };
     return true;
