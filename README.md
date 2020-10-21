@@ -1,4 +1,4 @@
-# Spaceport
+# SpaceportJS
 
 Componentized, Centralized, and grouped worker threads for NodeJS, the Browser, and any Worker supporting machines.
 
@@ -20,11 +20,17 @@ To get spaceport into your project, execute the following:
 
 `npm install [placeholder_for_resolution]` 
 
+### Practices
+
+To prevent having to change most of your worker code, Spaceport will always send an extra payload `spaceportInternals`. To keep track of resolutions from a cargobay, Spaceport needs the response to include the entire data object.
+
+Therefore, instead of similar packages having custom imports and frameworks in the worker code, spaceport simply needs `postMessage` to include `spaceportInternals` somewhere within the `data` property or in the root object.
+
 
 ### Basic CargoBay
 
 ```
-import spaceport, {cargoBay} from 'spaceport'
+import spaceport, {cargoBay} from 'spaceportjs'
 
 const MyCargoBay = new cargoBay({
  // TOO: Add config 
